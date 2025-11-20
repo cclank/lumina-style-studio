@@ -1,0 +1,5 @@
+{
+  "name": "Lumina Style Studio",
+  "description": "A premium, AI-powered real-time styling playground. Experiment with curated palettes, typography, and layout properties, or use Gemini 2.5 to generate bespoke themes based on mood. Visualize instantly and export CSS variables with a single click.",
+  "requestFramePermissions": []
+}
