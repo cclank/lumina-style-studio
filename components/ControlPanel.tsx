@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { TabView, Theme } from '../types';
-import { DEFAULT_FONTS, PRESET_THEMES } from '../constants';
+import { DEFAULT_FONTS } from '../constants';
 import { generateThemeFromPrompt } from '../services/geminiService';
 import { 
   Palette, 
@@ -17,7 +17,11 @@ import {
   Terminal,
   Download,
   Plus,
-  Trash2
+  Trash2,
+  Save,
+  Minus,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface ControlPanelProps {
@@ -25,22 +29,54 @@ interface ControlPanelProps {
   setTheme: (t: Theme) => void;
   activeTab: TabView;
   setActiveTab: (t: TabView) => void;
+  allThemes: Theme[];
+  addTheme: (t: Theme) => void;
+  removeTheme: (id: string) => void;
 }
 
-const STANDARD_COLOR_KEYS = ['primary', 'secondary', 'accent', 'background', 'surface', 'text', 'muted'];
+const STANDARD_COLOR_KEYS = ['primary', 'secondary', 'accent', 'background', 'surface', 'text', 'muted', 'success', 'warning', 'error', 'info'];
 
-const ControlPanel: React.FC<ControlPanelProps> = ({ currentTheme, setTheme, activeTab, setActiveTab }) => {
+const ControlPanel: React.FC<ControlPanelProps> = ({ 
+  currentTheme, 
+  setTheme, 
+  activeTab, 
+  setActiveTab,
+  allThemes,
+  addTheme,
+  removeTheme
+}) => {
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedHistory, setGeneratedHistory] = useState<Theme[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [newColorName, setNewColorName] = useState('');
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveThemeName, setSaveThemeName] = useState('');
 
   const handleColorChange = (key: string, value: string) => {
     setTheme({
       ...currentTheme,
       colors: { ...currentTheme.colors, [key]: value }
     });
+  };
+
+  // Fine-tuning: Lighten or Darken hex color
+  const adjustColorBrightness = (key: string, amount: number) => {
+    const color = currentTheme.colors[key] || '#000000';
+    // Ensure it's a hex string
+    if (!/^#[0-9A-F]{6}$/i.test(color)) return;
+
+    const num = parseInt(color.replace("#", ""), 16);
+    let r = (num >> 16) + amount;
+    let g = ((num >> 8) & 0x00FF) + amount;
+    let b = (num & 0x0000FF) + amount;
+
+    // Clamp values
+    r = Math.max(0, Math.min(255, r));
+    g = Math.max(0, Math.min(255, g));
+    b = Math.max(0, Math.min(255, b));
+
+    const newHex = "#" + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
+    handleColorChange(key, newHex);
   };
 
   const addCustomColor = () => {
@@ -81,7 +117,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ currentTheme, setTheme, act
     setIsGenerating(true);
     try {
       const newTheme = await generateThemeFromPrompt(aiPrompt);
-      setGeneratedHistory([newTheme, ...generatedHistory]);
+      addTheme(newTheme); // Add to list directly
       setTheme(newTheme);
     } catch (e) {
       alert("Failed to generate theme. Check console.");
@@ -90,11 +126,23 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ currentTheme, setTheme, act
     }
   };
 
-  // Enhanced "Smart Copy" for AI Workflows
+  const handleSaveTheme = () => {
+    if (!saveThemeName.trim()) return;
+    const newTheme: Theme = {
+      ...currentTheme,
+      id: `custom-${Date.now()}`,
+      name: saveThemeName,
+      description: 'User created custom theme.'
+    };
+    addTheme(newTheme);
+    setTheme(newTheme);
+    setShowSaveDialog(false);
+    setSaveThemeName('');
+  };
+
   const copyThemeToClipboard = (theme: Theme, e?: React.MouseEvent, customId?: string) => {
     if (e) e.stopPropagation();
 
-    // Generate CSS variables dynamically including custom ones
     const cssVarsBody = Object.entries(theme.colors)
       .map(([k, v]) => `  --color-${k}: ${v};`)
       .join('\n');
@@ -107,20 +155,17 @@ ${cssVarsBody}
   --border-width: ${theme.ui.borderWidth};
 }`;
 
-    // Construct a Rich Prompt for AI
     const aiReadyPrompt = `I want you to use the following Design System for the UI generation.
 
 Theme Name: ${theme.name}
 Vibe & Description: ${theme.description || 'A custom selected theme.'}
 
 ### CSS Variables
-Use these for direct styling implementation:
 \`\`\`css
 ${cssVars}
 \`\`\`
 
 ### Theme Configuration (JSON)
-Use this for logic, Tailwind config, or component props:
 \`\`\`json
 ${JSON.stringify(theme, null, 2)}
 \`\`\`
@@ -133,7 +178,6 @@ ${JSON.stringify(theme, null, 2)}
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Pure Code Copy (for the Export tab)
   const copyRawCode = (code: string, id: string) => {
     navigator.clipboard.writeText(code);
     setCopiedId(id);
@@ -150,9 +194,8 @@ ${JSON.stringify(theme, null, 2)}
     downloadAnchorNode.remove();
   };
 
-  // Helper to render a theme card
   const renderThemeCard = (theme: Theme) => (
-    <div key={theme.id} className="relative group">
+    <div key={theme.id} className="relative group animate-fade-in">
       <button
         onClick={() => setTheme(theme)}
         className={`w-full p-4 rounded-lg border text-left transition-all ${
@@ -162,32 +205,104 @@ ${JSON.stringify(theme, null, 2)}
         }`}
       >
         <div className="flex items-center justify-between mb-2 pr-8">
-          <span className="font-medium text-neutral-200">{theme.name}</span>
+          <span className="font-medium text-neutral-200 truncate">{theme.name}</span>
           {currentTheme.id === theme.id && <Check size={16} className="text-indigo-400 absolute top-4 right-4" />}
         </div>
         <p className="text-xs text-neutral-500 mb-3 line-clamp-1">{theme.description}</p>
-        <div className="flex gap-1">
-          {/* Preview up to 4 main colors */}
-          {[theme.colors.primary, theme.colors.secondary, theme.colors.accent, theme.colors.background].map((c, i) => (
-            <div key={i} className="w-6 h-6 rounded-full border border-white/10 shadow-sm" style={{ backgroundColor: c }} />
+        <div className="flex gap-1 flex-wrap">
+          {Object.values(theme.colors).slice(0,5).map((c, i) => (
+            <div key={i} className="w-5 h-5 rounded-full border border-white/10 shadow-sm" style={{ backgroundColor: c }} />
           ))}
+          {Object.keys(theme.colors).length > 5 && (
+            <div className="w-5 h-5 rounded-full bg-neutral-800 flex items-center justify-center text-[8px] text-neutral-400">+{Object.keys(theme.colors).length - 5}</div>
+          )}
         </div>
       </button>
       
-      {/* Floating Copy Button */}
-      <button
-        onClick={(e) => copyThemeToClipboard(theme, e)}
-        title="Copy AI Prompt & Style"
-        className={`absolute top-3 right-3 p-2 rounded-md shadow-lg transition-all transform scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 focus:opacity-100 ${
-          copiedId === theme.id ? 'bg-green-500 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-indigo-600 hover:text-white'
-        }`}
-      >
-        {copiedId === theme.id ? <Check size={14} /> : <Copy size={14} />}
-      </button>
+      <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-all focus-within:opacity-100">
+        <button
+          onClick={(e) => copyThemeToClipboard(theme, e)}
+          title="Copy Style for AI"
+          className={`p-2 rounded-md shadow-lg transition-all transform scale-90 hover:scale-100 ${
+            copiedId === theme.id ? 'bg-green-500 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-indigo-600 hover:text-white'
+          }`}
+        >
+          {copiedId === theme.id ? <Check size={14} /> : <Copy size={14} />}
+        </button>
+        {/* Allow deleting only if it's not a "tech-" or "art-" or "style-" default ID, or just check if it's a custom one based on ID pattern */}
+        {!theme.id.startsWith('tech-') && !theme.id.startsWith('art-') && !theme.id.startsWith('style-') && !theme.id.startsWith('swiss') && !theme.id.startsWith('default') && !theme.id.startsWith('luxury') && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if(confirm('Delete this theme?')) removeTheme(theme.id);
+              }}
+              title="Delete Theme"
+              className="p-2 rounded-md shadow-lg bg-neutral-700 text-neutral-300 hover:bg-red-600 hover:text-white transition-all transform scale-90 hover:scale-100"
+            >
+              <Trash2 size={14} />
+            </button>
+        )}
+      </div>
     </div>
   );
 
-  // Helper to generate exportable CSS variables code block
+  // Render Color Row
+  const renderColorRow = (key: string, isCustom: boolean) => {
+     // Fallback for missing standard keys on older presets
+     const displayValue = currentTheme.colors[key] || (key === 'success' ? '#22c55e' : key === 'warning' ? '#eab308' : key === 'error' ? '#ef4444' : key === 'info' ? '#3b82f6' : '#000000');
+     
+     return (
+      <div key={key} className="flex items-center justify-between group py-1">
+        <label className="text-sm text-neutral-400 capitalize group-hover:text-neutral-200 transition-colors w-24 truncate" title={key}>{key}</label>
+        
+        <div className="flex items-center gap-2 flex-1 justify-end">
+          {/* Fine Tuning Controls */}
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity mr-2">
+            <button 
+              onClick={() => adjustColorBrightness(key, -10)} 
+              className="p-1 rounded hover:bg-neutral-700 text-neutral-500 hover:text-neutral-300"
+              title="Darken"
+            >
+              <Minus size={10} />
+            </button>
+            <button 
+              onClick={() => adjustColorBrightness(key, 10)} 
+              className="p-1 rounded hover:bg-neutral-700 text-neutral-500 hover:text-neutral-300"
+              title="Lighten"
+            >
+              <Plus size={10} />
+            </button>
+          </div>
+
+          <div className="relative group/picker">
+            <input 
+              type="color" 
+              value={displayValue}
+              onChange={(e) => handleColorChange(key, e.target.value)}
+              className="w-8 h-8 rounded-full cursor-pointer bg-transparent border-none p-0 overflow-hidden relative z-10"
+            />
+            <div className="absolute inset-0 rounded-full ring-1 ring-white/20 pointer-events-none"></div>
+          </div>
+          
+          <input 
+            type="text" 
+            value={displayValue} 
+            onChange={(e) => handleColorChange(key, e.target.value)}
+            className="w-20 bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-xs text-neutral-300 font-mono uppercase focus:border-indigo-500 outline-none"
+          />
+          
+          {isCustom ? (
+            <button onClick={() => removeCustomColor(key)} className="text-neutral-600 hover:text-red-400 p-1 ml-1">
+              <Trash2 size={14} />
+            </button>
+          ) : (
+             <div className="w-6 ml-1"></div> // Spacer to align with custom rows
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const generateCssVarsCode = () => {
      return `:root {
 ${Object.entries(currentTheme.colors).map(([k, v]) => `  --color-${k}: ${v};`).join('\n')}
@@ -198,7 +313,6 @@ ${Object.entries(currentTheme.colors).map(([k, v]) => `  --color-${k}: ${v};`).j
 }`;
   };
   
-  // Helper to generate Tailwind Extend config
   const generateTailwindCode = () => {
     const colorEntries = Object.entries(currentTheme.colors)
       .map(([k, v]) => `      ${k}: '${v}',`)
@@ -260,14 +374,25 @@ ${colorEntries}
         {/* PRESETS TAB */}
         {activeTab === TabView.PRESETS && (
           <div className="space-y-6">
-            
+            {/* User Created / Generated */}
+            {allThemes.some(t => !t.id.startsWith('tech-') && !t.id.startsWith('art-') && !t.id.startsWith('style-') && !t.id.startsWith('swiss') && !t.id.startsWith('default') && !t.id.startsWith('luxury')) && (
+                <div>
+                   <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3 sticky top-0 bg-neutral-900 py-2 z-10 flex items-center gap-2">
+                      <Save size={12} /> My Themes
+                   </h3>
+                   <div className="grid grid-cols-1 gap-3">
+                      {allThemes.filter(t => !t.id.startsWith('tech-') && !t.id.startsWith('art-') && !t.id.startsWith('style-') && !t.id.startsWith('swiss') && !t.id.startsWith('default') && !t.id.startsWith('luxury')).map(renderThemeCard)}
+                   </div>
+                </div>
+            )}
+
             {/* Tech Giants */}
             <div>
                <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-3 sticky top-0 bg-neutral-900 py-2 z-10 flex items-center gap-2">
                   <Layers size={12} /> Tech & Productivity
                </h3>
                <div className="grid grid-cols-1 gap-3">
-                  {PRESET_THEMES.filter(t => t.id.startsWith('tech-')).map(renderThemeCard)}
+                  {allThemes.filter(t => t.id.startsWith('tech-')).map(renderThemeCard)}
                </div>
             </div>
 
@@ -277,7 +402,7 @@ ${colorEntries}
                   <Palette size={12} /> Fine Art & Media
                </h3>
                <div className="grid grid-cols-1 gap-3">
-                  {PRESET_THEMES.filter(t => t.id.startsWith('art-')).map(renderThemeCard)}
+                  {allThemes.filter(t => t.id.startsWith('art-')).map(renderThemeCard)}
                </div>
             </div>
 
@@ -287,7 +412,7 @@ ${colorEntries}
                   <Sparkles size={12} /> Modern & Trendy
                </h3>
                <div className="grid grid-cols-1 gap-3">
-                  {PRESET_THEMES.filter(t => !t.id.startsWith('art-') && !t.id.startsWith('tech-')).map(renderThemeCard)}
+                  {allThemes.filter(t => !t.id.startsWith('art-') && !t.id.startsWith('tech-') && !t.id.includes('custom-')).map(renderThemeCard)}
                </div>
             </div>
 
@@ -297,77 +422,63 @@ ${colorEntries}
         {/* CUSTOMIZE TAB */}
         {activeTab === TabView.CUSTOMIZE && (
           <div className="space-y-8 animate-fade-in">
+            
+            {/* Save Theme Prompt */}
+            {showSaveDialog ? (
+              <div className="bg-neutral-800/50 border border-indigo-500/50 p-4 rounded-lg mb-4 animate-slide-up">
+                 <label className="block text-xs text-indigo-300 mb-2">Theme Name</label>
+                 <div className="flex gap-2">
+                    <input 
+                      autoFocus
+                      type="text" 
+                      value={saveThemeName}
+                      onChange={(e) => setSaveThemeName(e.target.value)}
+                      className="flex-1 bg-neutral-950 border border-neutral-700 rounded px-3 py-1 text-sm text-white focus:border-indigo-500 outline-none"
+                      placeholder="e.g. Midnight Pro"
+                    />
+                    <button onClick={handleSaveTheme} disabled={!saveThemeName} className="bg-indigo-600 text-white px-3 rounded text-xs font-bold hover:bg-indigo-500">Save</button>
+                    <button onClick={() => setShowSaveDialog(false)} className="text-neutral-400 px-2 hover:text-white">Cancel</button>
+                 </div>
+              </div>
+            ) : (
+               <div className="flex gap-2">
+                  <button 
+                    onClick={() => setShowSaveDialog(true)}
+                    className="flex-1 py-2 bg-neutral-800 border border-neutral-700 hover:border-indigo-500 hover:text-indigo-400 text-neutral-300 rounded text-xs font-bold flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Save size={14} /> Save as Preset
+                  </button>
+                  <button 
+                    onClick={(e) => copyThemeToClipboard(currentTheme, e, 'custom-copy')}
+                    className={`flex-1 py-2 border border-neutral-700 rounded text-xs font-bold flex items-center justify-center gap-2 transition-colors ${
+                      copiedId === 'custom-copy' 
+                        ? 'bg-green-500/20 text-green-400 border-green-500/50' 
+                        : 'bg-neutral-800 text-neutral-300 hover:border-indigo-500 hover:text-indigo-400'
+                    }`}
+                  >
+                    {copiedId === 'custom-copy' ? <Check size={14}/> : <Terminal size={14}/>}
+                    {copiedId === 'custom-copy' ? 'Copied Prompt' : 'Copy AI Prompt'}
+                  </button>
+               </div>
+            )}
+
             {/* Colors Section */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-2">
-                  <Palette size={14}/> Color Palette
-                </h3>
-                {/* COPY BUTTON IN CUSTOMIZE TAB */}
-                <button 
-                  onClick={(e) => copyThemeToClipboard(currentTheme, e, 'custom-copy')}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium transition-all ${
-                    copiedId === 'custom-copy' 
-                      ? 'bg-green-500/20 text-green-400' 
-                      : 'bg-neutral-800 text-neutral-400 hover:bg-indigo-500/20 hover:text-indigo-400'
-                  }`}
-                  title="Copy full prompt for AI"
-                >
-                  {copiedId === 'custom-copy' ? <Check size={12}/> : <Terminal size={12}/>}
-                  {copiedId === 'custom-copy' ? 'Copied Prompt' : 'Copy AI Prompt'}
-                </button>
-              </div>
+              <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Palette size={14}/> Palette Tuner
+              </h3>
 
               {/* Standard Colors */}
-              <div className="grid grid-cols-1 gap-3 mb-6">
-                {STANDARD_COLOR_KEYS.map((key) => (
-                  <div key={key} className="flex items-center justify-between group">
-                    <label className="text-sm text-neutral-400 capitalize group-hover:text-neutral-200 transition-colors">{key}</label>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="color" 
-                        value={currentTheme.colors[key]}
-                        onChange={(e) => handleColorChange(key, e.target.value)}
-                        className="w-8 h-8 rounded-full cursor-pointer bg-transparent border-none p-0"
-                      />
-                      <input 
-                        type="text" 
-                        value={currentTheme.colors[key]} 
-                        onChange={(e) => handleColorChange(key, e.target.value)}
-                        className="w-20 bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-xs text-neutral-300 font-mono uppercase focus:border-indigo-500 outline-none"
-                      />
-                    </div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 gap-1 mb-6">
+                {STANDARD_COLOR_KEYS.map((key) => renderColorRow(key, false))}
               </div>
               
               {/* Custom Colors */}
               {Object.keys(currentTheme.colors).filter(k => !STANDARD_COLOR_KEYS.includes(k)).length > 0 && (
                 <>
-                  <h4 className="text-[10px] font-bold text-neutral-600 uppercase mb-3">Custom Colors</h4>
-                  <div className="grid grid-cols-1 gap-3 mb-6">
-                    {Object.keys(currentTheme.colors).filter(k => !STANDARD_COLOR_KEYS.includes(k)).map((key) => (
-                       <div key={key} className="flex items-center justify-between group">
-                        <label className="text-sm text-neutral-400 capitalize group-hover:text-neutral-200 transition-colors">{key}</label>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="color" 
-                            value={currentTheme.colors[key]}
-                            onChange={(e) => handleColorChange(key, e.target.value)}
-                            className="w-8 h-8 rounded-full cursor-pointer bg-transparent border-none p-0"
-                          />
-                          <input 
-                            type="text" 
-                            value={currentTheme.colors[key]} 
-                            onChange={(e) => handleColorChange(key, e.target.value)}
-                            className="w-20 bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-xs text-neutral-300 font-mono uppercase focus:border-indigo-500 outline-none"
-                          />
-                          <button onClick={() => removeCustomColor(key)} className="text-neutral-600 hover:text-red-400 p-1">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                  <h4 className="text-[10px] font-bold text-neutral-600 uppercase mb-2 mt-6 border-t border-neutral-800 pt-4">Custom Tokens</h4>
+                  <div className="grid grid-cols-1 gap-1 mb-6">
+                    {Object.keys(currentTheme.colors).filter(k => !STANDARD_COLOR_KEYS.includes(k)).map((key) => renderColorRow(key, true))}
                   </div>
                 </>
               )}
@@ -376,7 +487,7 @@ ${colorEntries}
               <div className="flex gap-2 items-center mt-4 pt-4 border-t border-neutral-800">
                 <input 
                   type="text" 
-                  placeholder="New color name..." 
+                  placeholder="Add token (e.g. success, warning)..." 
                   value={newColorName}
                   onChange={(e) => setNewColorName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addCustomColor()}
@@ -502,30 +613,6 @@ ${colorEntries}
                 {isGenerating ? 'Dreaming...' : 'Generate Theme'}
               </button>
             </div>
-
-            {/* History */}
-            {generatedHistory.length > 0 && (
-              <div className="space-y-3">
-                 <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Recent Generations</h4>
-                 {generatedHistory.map((h, idx) => (
-                   <div key={idx} className="relative group">
-                    <button onClick={() => setTheme(h)} className="w-full p-3 rounded-lg bg-neutral-800/50 border border-neutral-700 hover:border-neutral-500 flex items-center gap-3 text-left transition-colors">
-                        <div className="w-8 h-8 rounded-md" style={{ backgroundColor: h.colors.primary }}></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-neutral-200 truncate">{h.name}</p>
-                          <p className="text-[10px] text-neutral-500 truncate">{h.description}</p>
-                        </div>
-                    </button>
-                    <button
-                      onClick={(e) => copyThemeToClipboard(h, e)}
-                      className={`absolute top-3 right-3 p-1.5 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-all ${copiedId === h.id ? 'bg-green-500 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-indigo-600 hover:text-white'}`}
-                    >
-                      {copiedId === h.id ? <Check size={12} /> : <Copy size={12} />}
-                    </button>
-                   </div>
-                 ))}
-              </div>
-            )}
           </div>
         )}
 

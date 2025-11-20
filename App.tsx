@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import { DEFAULT_THEME } from './constants';
-import { Theme, TabView } from './types';
+import { DEFAULT_THEME, PRESET_THEMES } from './constants';
+import { Theme, TabView, ColorPalette } from './types';
 import ControlPanel from './components/ControlPanel';
 import PreviewContainer from './components/PreviewContainer';
 import { Monitor, Smartphone } from 'lucide-react';
@@ -9,6 +10,42 @@ const App: React.FC = () => {
   const [currentTheme, setCurrentTheme] = useState<Theme>(DEFAULT_THEME);
   const [activeTab, setActiveTab] = useState<TabView>(TabView.PRESETS);
   const [isMobileView, setIsMobileView] = useState(false);
+  
+  // Manage the list of available themes (presets + user saved)
+  const [allThemes, setAllThemes] = useState<Theme[]>(PRESET_THEMES);
+
+  // Helper to ensure the theme has all standard color keys, even if they were missing in the preset
+  const enrichTheme = (theme: Theme): Theme => {
+    const defaultStatusColors: Partial<ColorPalette> = {
+      success: '#22c55e',
+      warning: '#eab308',
+      error: '#ef4444',
+      info: '#3b82f6'
+    };
+    
+    const enrichedColors = { ...defaultStatusColors, ...theme.colors };
+    return { ...theme, colors: enrichedColors as ColorPalette };
+  };
+
+  const handleSetTheme = (theme: Theme) => {
+    setCurrentTheme(enrichTheme(theme));
+  };
+
+  const handleAddTheme = (newTheme: Theme) => {
+    const enriched = enrichTheme(newTheme);
+    setAllThemes([enriched, ...allThemes]);
+    // Switch to presets tab to show the new list
+    setActiveTab(TabView.PRESETS);
+    handleSetTheme(enriched);
+  };
+
+  const handleRemoveTheme = (themeId: string) => {
+    setAllThemes(allThemes.filter(t => t.id !== themeId));
+    // If the deleted theme was selected, revert to default
+    if (currentTheme.id === themeId) {
+      handleSetTheme(DEFAULT_THEME);
+    }
+  };
 
   return (
     <div className="flex h-screen w-full bg-neutral-950 text-white overflow-hidden font-sans">
@@ -61,9 +98,12 @@ const App: React.FC = () => {
       <aside className="w-80 md:w-96 flex-shrink-0 h-full z-20">
         <ControlPanel 
           currentTheme={currentTheme} 
-          setTheme={setCurrentTheme}
+          setTheme={handleSetTheme}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          allThemes={allThemes}
+          addTheme={handleAddTheme}
+          removeTheme={handleRemoveTheme}
         />
       </aside>
 

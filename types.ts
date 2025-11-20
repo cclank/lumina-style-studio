@@ -7,6 +7,10 @@ export interface ColorPalette {
   surface: string;
   text: string;
   muted: string;
+  success: string;
+  warning: string;
+  error: string;
+  info: string;
   [key: string]: string; // Allow dynamic extension
 }
 

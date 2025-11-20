@@ -1,3 +1,4 @@
+
 import { Theme } from './types';
 
 export const DEFAULT_FONTS = [
@@ -22,6 +23,10 @@ export const DEFAULT_THEME: Theme = {
     surface: '#f8fafc',
     text: '#0f172a',
     muted: '#94a3b8',
+    success: '#22c55e',
+    warning: '#eab308',
+    error: '#ef4444',
+    info: '#3b82f6',
   },
   typography: {
     headingFont: '"Inter", sans-serif',
@@ -51,6 +56,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#ffffff', // Pure White
       text: '#1d1d1f', // Almost Black
       muted: '#86868b',
+      success: '#34c759',
+      warning: '#ff9f0a',
+      error: '#ff3b30',
+      info: '#007aff',
     },
     typography: {
       headingFont: '"Inter", sans-serif',
@@ -75,6 +84,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#f7f6f3', // Light Gray Background
       text: '#37352f',
       muted: '#9b9a97',
+      success: '#0f7b6c',
+      warning: '#d9730d',
+      error: '#df5452',
+      info: '#0b6e99',
     },
     typography: {
       headingFont: '"Merriweather", serif', // Lyon proxy
@@ -99,6 +112,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#ffffff',
       text: '#383838', // Dark Gray
       muted: '#9e9e9e',
+      success: '#4d8b55',
+      warning: '#d49e2a',
+      error: '#d15648',
+      info: '#4a8bb3',
     },
     typography: {
       headingFont: '"Merriweather", serif', // Tiémpos proxy
@@ -125,6 +142,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#ffffff',
       text: '#000000',
       muted: '#525252',
+      success: '#22c55e',
+      warning: '#f59e0b',
+      error: '#ef4444',
+      info: '#3b82f6',
     },
     typography: {
       headingFont: '"Space Grotesk", sans-serif',
@@ -149,6 +170,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#120458', // Deep Blue
       text: '#ffffff',
       muted: '#b967ff',
+      success: '#05ffa1',
+      warning: '#fffb96',
+      error: '#ff71ce',
+      info: '#01cdfe',
     },
     typography: {
       headingFont: '"Outfit", sans-serif',
@@ -175,6 +200,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#e7e5e4', // Wet Paper
       text: '#0a0a0a',
       muted: '#78716c',
+      success: '#15803d',
+      warning: '#b45309',
+      error: '#991b1b',
+      info: '#1d4ed8',
     },
     typography: {
       headingFont: '"Playfair Display", serif',
@@ -199,6 +228,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#44403c', // Stone 700
       text: '#f5f5f4', // Stone 100
       muted: '#a8a29e',
+      success: '#166534',
+      warning: '#b45309',
+      error: '#7f1d1d',
+      info: '#1e40af',
     },
     typography: {
       headingFont: '"Merriweather", serif',
@@ -223,6 +256,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#ffffff',
       text: '#475569', // Slate 600
       muted: '#cbd5e1',
+      success: '#34d399',
+      warning: '#fcd34d',
+      error: '#fca5a5',
+      info: '#7dd3fc',
     },
     typography: {
       headingFont: '"Outfit", sans-serif',
@@ -247,6 +284,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#d4d4d4',
       text: '#0a0a0a',
       muted: '#737373',
+      success: '#404040',
+      warning: '#525252',
+      error: '#171717',
+      info: '#262626',
     },
     typography: {
       headingFont: '"Fira Code", monospace', // Technical feel
@@ -273,6 +314,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#E7E5E4', // Stone 200
       text: '#292524', // Warm Black
       muted: '#78716C',
+      success: '#65a30d',
+      warning: '#d97706',
+      error: '#b91c1c',
+      info: '#1e293b',
     },
     typography: {
       headingFont: '"Space Grotesk", sans-serif', // Geometric
@@ -297,6 +342,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#FFFFFF',
       text: '#0F172A',
       muted: '#64748B',
+      success: '#22c55e',
+      warning: '#f59e0b',
+      error: '#ef4444',
+      info: '#0ea5e9',
     },
     typography: {
       headingFont: '"Playfair Display", serif', // Elegant/Classical
@@ -321,6 +370,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#FFFFFF',
       text: '#000000',
       muted: '#525252',
+      success: '#16a34a',
+      warning: '#ca8a04',
+      error: '#dc2626',
+      info: '#2563eb',
     },
     typography: {
       headingFont: '"Outfit", sans-serif', // Bold modern
@@ -347,6 +400,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#f5f5f5',
       text: '#111111',
       muted: '#737373',
+      success: '#22c55e',
+      warning: '#eab308',
+      error: '#ef4444',
+      info: '#3b82f6',
     },
     typography: {
       headingFont: '"Inter", sans-serif',
@@ -371,6 +428,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#171717',
       text: '#e5e5e5',
       muted: '#525252',
+      success: '#d4af37',
+      warning: '#fcd34d',
+      error: '#991b1b',
+      info: '#e5e5e5',
     },
     typography: {
       headingFont: '"Merriweather", serif',
@@ -397,6 +458,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#1e293b',
       text: '#f1f5f9',
       muted: '#64748b',
+      success: '#22c55e',
+      warning: '#eab308',
+      error: '#ef4444',
+      info: '#1e3a8a',
     },
     typography: {
       headingFont: '"Playfair Display", serif',
@@ -421,6 +486,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#ffffff',
       text: '#0c4a6e',
       muted: '#94a3b8',
+      success: '#10b981',
+      warning: '#f59e0b',
+      error: '#ef4444',
+      info: '#3b82f6',
     },
     typography: {
       headingFont: '"Merriweather", serif',
@@ -445,6 +514,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#ffffff',
       text: '#14532d',
       muted: '#86efac',
+      success: '#86efac',
+      warning: '#fcd34d',
+      error: '#fca5a5',
+      info: '#d8b4e2',
     },
     typography: {
       headingFont: '"Playfair Display", serif',
@@ -469,6 +542,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#ffffff',
       text: '#14532d', // Dark Green text
       muted: '#86efac',
+      success: '#4d7c0f',
+      warning: '#eab308',
+      error: '#ef4444',
+      info: '#a21caf',
     },
     typography: {
       headingFont: '"Merriweather", serif',
@@ -493,6 +570,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#1c1917',
       text: '#fefce8',
       muted: '#78350f',
+      success: '#ca8a04',
+      warning: '#fde047',
+      error: '#991b1b',
+      info: '#fde047',
     },
     typography: {
       headingFont: '"Space Grotesk", sans-serif',
@@ -517,6 +598,10 @@ export const PRESET_THEMES: Theme[] = [
       surface: '#0f172a',
       text: '#e2e8f0',
       muted: '#475569',
+      success: '#22c55e',
+      warning: '#d97706',
+      error: '#ef4444',
+      info: '#1d4ed8',
     },
     typography: {
       headingFont: '"Playfair Display", serif',
